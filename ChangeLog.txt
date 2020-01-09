@@ -1,4 +1,8 @@
 ChangeLog
 
+0.0.1.1
+	Fixed initial size of window
+	Enabled auto-expandable 
+
 0.0.1
 	Initial release for KSP 1.8.1

@@ -15,9 +15,9 @@ namespace BigBen
     public class BigBen : MonoBehaviour
     {
         const float WIDTH = 300;
-        const float MIN_HEIGHT = 50;
-        const float MAX_HEIGHT = 800;
-        private Rect posBigBenWindow = new Rect(50, 50, MIN_HEIGHT, WIDTH);
+        const float MIN_HEIGHT = 110;
+        float MAX_HEIGHT = 800;
+        private Rect posBigBenWindow = new Rect(50, 50, WIDTH, MIN_HEIGHT);
 
         internal const string MODID = "BigBen_ns";
         internal const string MODNAME = "Big Ben";
@@ -60,9 +60,9 @@ namespace BigBen
             }
         }
 
-        static public  List<Timer> timers = new List<Timer>();
-
+        static public List<Timer> timers = new List<Timer>();
         Timer timer;
+        Vector2 listPos;
 
         void Awake()
         {
@@ -74,8 +74,9 @@ namespace BigBen
 
             GameEvents.onGameSceneSwitchRequested.Add(onGameSceneSwitchRequested);
             AddNewTimer();
+            MAX_HEIGHT = Screen.height - 40;
         }
-    
+
         void onGameSceneSwitchRequested(GameEvents.FromToAction<GameScenes, GameScenes> fta)
         {
             if (fta.to == GameScenes.MAINMENU)
@@ -116,22 +117,20 @@ namespace BigBen
             }
             if (visible)
             {
-                posBigBenWindow = ClickThruBlocker.GUILayoutWindow(56783457, posBigBenWindow, DrawList, "Big Ben", 
+                posBigBenWindow = ClickThruBlocker.GUILayoutWindow(56783457, posBigBenWindow, DrawList, "Big Ben",
                    GUILayout.Width(WIDTH), GUILayout.MinHeight(MIN_HEIGHT), GUILayout.MaxHeight(MAX_HEIGHT));
-
             }
 
         }
 
-        Vector2 listPos;
         void DrawList(int id)
         {
-
             GUILayout.BeginVertical();
             GUILayout.BeginHorizontal();
             HighLogic.CurrentGame.Parameters.CustomParams<Big_Ben>().multiple = GUILayout.Toggle(HighLogic.CurrentGame.Parameters.CustomParams<Big_Ben>().multiple, "Multiple");
             GUILayout.EndHorizontal();
-            listPos = GUILayout.BeginScrollView(listPos, GUILayout.Width(WIDTH - 10),GUILayout.MinHeight(MIN_HEIGHT),  GUILayout.MaxHeight(MAX_HEIGHT));
+
+            listPos = GUILayout.BeginScrollView(listPos, GUILayout.Width(WIDTH - 10), GUILayout.ExpandHeight(true));
 
             int cnt = 0;
             foreach (Timer t in timers)
@@ -195,7 +194,7 @@ namespace BigBen
             timer.min = GUILayout.TextField(timer.min, GUILayout.Width(30));
             GUILayout.Label(":");
             timer.sec = GUILayout.TextField(timer.sec, GUILayout.Width(30));
- 
+
 
 
             if (timer.hrs != timer.hours.ToString() ||
@@ -291,7 +290,7 @@ namespace BigBen
                 timer.hours = (int)(timer.elapsedTime / 3600);
                 timer.minutes = (int)((timer.elapsedTime - timer.hours * 3600) / 60);
                 timer.seconds = (int)(timer.elapsedTime - timer.hours * 3600 - timer.minutes * 60);
-                    timer.tenths = (int)(timer.hours * 3600 - timer.minutes * 60 - timer.seconds);
+                timer.tenths = (int)(timer.hours * 3600 - timer.minutes * 60 - timer.seconds);
                 timer.negative = false;
             }
             else
@@ -301,8 +300,8 @@ namespace BigBen
                 timer.minutes = (int)((timeLeft - timer.hours * 3600) / 60);
                 timer.seconds = (int)(timeLeft - timer.hours * 3600 - timer.minutes * 60);
 
-                    timer.tenths = (int)(timeLeft - timer.hours * 3600 - timer.minutes * 60 - timer.seconds);
-              
+                timer.tenths = (int)(timeLeft - timer.hours * 3600 - timer.minutes * 60 - timer.seconds);
+
                 if (timer.startTime - timer.elapsedTime < 0)
                     timer.negative = true;
                 else
@@ -358,7 +357,7 @@ namespace BigBen
                 timer.elapsedTimeAtPause = 0;
             }
             GUI.enabled = true;
-            
+
             var bstyle = new GUIStyle(GUI.skin.button);
             bstyle.normal.textColor = Color.yellow;
 
@@ -400,7 +399,7 @@ namespace BigBen
         }
         void MoveDown(Timer timer)
         {
-            if (timer.sortId+1 < timers.Count )
+            if (timer.sortId + 1 < timers.Count)
             {
                 timers[timer.sortId + 1].sortId = timer.sortId;
                 timer.sortId++;

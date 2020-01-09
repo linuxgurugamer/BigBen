@@ -1,0 +1,3 @@
+Fix size when only one timer
+Fix entry of numbers to allow both negative and blank
+if not valid entry, disallow start
