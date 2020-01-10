@@ -1,5 +1,19 @@
 ChangeLog
 
+0.0.2
+	Removed the scrollview if multiple is not enabled
+	Added BigBen sounds
+	Added Repeatable countdown
+	Added bell at zero when counting down 
+	Added incrementing bell at zero
+	Fixed error with tenths of a second not being correct
+	Can now enter negative numbers for a countUp.  Make any field negative to do so
+	displayed time now accounts for days and years.  Works with hours/day set to Kerbin or real
+	Added option to change dispayed time
+	Invalid number in entry field now shows the field as red
+	Empty field is processed as a zero
+	Setting to allow each timer to have a local tenths setting
+
 0.0.1.1
 	Fixed initial size of window
 	Enabled auto-expandable 
