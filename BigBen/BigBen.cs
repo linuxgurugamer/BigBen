@@ -145,6 +145,8 @@ namespace BigBen
 
         void OnGUI()
         {
+            if (HighLogic.CurrentGame == null)
+                return;
             if (!HighLogic.CurrentGame.Parameters.CustomParams<Big_Ben>().useAlternateSkin)
                 GUI.skin = HighLogic.Skin;
             if (!initted)

@@ -1,5 +1,8 @@
 ChangeLog
 
+0.0.2.1
+	Fixed nullref when going to the MainMenu from inside a game.
+
 0.0.2
 	Removed the scrollview if multiple is not enabled
 	Added BigBen sounds
