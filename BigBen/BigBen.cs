@@ -74,7 +74,7 @@ namespace BigBen
             MAX_HEIGHT = Screen.height - 40;
             soundplayer.Initialize(SOUND_DIR + "bell"); // Initializes the player, does some housekeeping
             //normalAlertLength = soundplayer.SoundLength("bell");
-            soundplayer.SetVolume = HighLogic.CurrentGame.Parameters.CustomParams<Big_Ben>().volume;
+            soundplayer.Volume = HighLogic.CurrentGame.Parameters.CustomParams<Big_Ben>().volume;
         }
 
         void OnDestroy()
@@ -86,7 +86,11 @@ namespace BigBen
         }
         void OnGameSettingsApplied()
         {
-            soundplayer.SetVolume = HighLogic.CurrentGame.Parameters.CustomParams<Big_Ben>().volume;
+            if (soundplayer != null &&
+                HighLogic.CurrentGame != null && HighLogic.CurrentGame.Parameters != null)
+            {
+                soundplayer.Volume = HighLogic.CurrentGame.Parameters.CustomParams<Big_Ben>().volume;
+            }
         }
         void onGameSceneSwitchRequested(GameEvents.FromToAction<GameScenes, GameScenes> fta)
         {

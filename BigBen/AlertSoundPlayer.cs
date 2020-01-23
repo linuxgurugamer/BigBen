@@ -80,6 +80,16 @@ namespace BigBen
             source.audio.spatialBlend = 0;
         }
 
-        public float SetVolume { set { source.audio.volume = value; } }
+        public float Volume {
+            get
+            {
+                if (source != null && source.audio != null)
+                    return source.audio.volume;
+                else return 0;
+            }
+            set {
+                if (source != null && source.audio != null) source.audio.volume = value; 
+            }
+        }
     }
 }

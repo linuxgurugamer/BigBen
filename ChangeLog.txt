@@ -1,5 +1,8 @@
 ChangeLog
 
+0.0.2.2
+	Fixed nullref when coming back from the settings page if no timer has been set
+
 0.0.2.1
 	Fixed nullref when going to the MainMenu from inside a game.
 
