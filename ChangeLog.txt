@@ -1,5 +1,8 @@
 ChangeLog
 
+0.0.2.3
+	Updated references in csproj file
+
 0.0.2.2
 	Fixed nullref when coming back from the settings page if no timer has been set
 
