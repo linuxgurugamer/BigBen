@@ -1,12 +1,10 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using UnityEngine;
 using ToolbarControl_NS;
 using ClickThroughFix;
-using KSP.UI;
 using KSP.UI.Screens;
 
 namespace BigBen
@@ -14,29 +12,24 @@ namespace BigBen
     [KSPAddon(KSPAddon.Startup.AllGameScenes, true)]
     public class BigBen : MonoBehaviour
     {
+        //public static int dayLength;
+       // public static int yearLength;
 
-
-        public static int dayLength;
-        public static int yearLength;
-
-        const float WIDTH = 300;
+        const float WIDTH = 350;
         const float MIN_HEIGHT = 110;
-        float MAX_HEIGHT = 800;
+        internal static float MAX_HEIGHT = 800;
         private Rect posBigBenWindow = new Rect(50, 50, WIDTH, MIN_HEIGHT);
 
         internal const string MODID = "BigBen_ns";
         internal const string MODNAME = "Big Ben";
 
-        static internal ToolbarControl toolbarControl = null;
+        static private ToolbarControl toolbarControl = null;
         bool visible = false;
-        bool initted = false;
-        GUIStyle labelTextColor;
-        Color origTextColor;
-        Color origBackgroundColor;
 
         static public List<Timer> timers = new List<Timer>();
         Timer timer;
         Vector2 listPos;
+        int winId;
 
         internal AlertSoundPlayer soundplayer;
         internal const string SOUND_DIR = "BigBen/Sounds/";
@@ -44,11 +37,12 @@ namespace BigBen
         internal static string normalAlert = "bell";
         //internal static float normalAlertLength;
         public bool Paused = false;
+
         void Awake()
         {
             DontDestroyOnLoad(this);
-            //soundplayer = new AlertSoundPlayer();
             soundplayer = gameObject.AddComponent<AlertSoundPlayer>();
+#if false
             if (GameSettings.KERBIN_TIME)
             {
                 dayLength = 6;
@@ -59,7 +53,9 @@ namespace BigBen
                 dayLength = 24;
                 yearLength = 365;
             }
+#endif
         }
+
 
         void Start()
         {
@@ -70,11 +66,113 @@ namespace BigBen
             GameEvents.onGameUnpause.Add(OnUnpause);
             GameEvents.OnGameSettingsApplied.Add(OnGameSettingsApplied);
 
-            AddNewTimer();
             MAX_HEIGHT = Screen.height - 40;
             soundplayer.Initialize(SOUND_DIR + "bell"); // Initializes the player, does some housekeeping
-            //normalAlertLength = soundplayer.SoundLength("bell");
             soundplayer.Volume = HighLogic.CurrentGame.Parameters.CustomParams<Big_Ben>().volume;
+            winId = SpaceTuxUtility.WindowHelper.NextWindowId("BigBen");
+            StopAllCoroutines();
+            StartCoroutine(SlowUpdate());
+        }
+
+        IEnumerator SlowUpdate()
+        {
+            while (true)
+            {
+                if (HighLogic.CurrentGame == null)
+                    break;
+                yield return new WaitForSeconds(0.25f);
+                for (int i = timers.Count - 1; i >= 0; i--)
+                {
+                    var localTimer = timers[i];
+                    if (localTimer.timerActive)
+                    {
+                        if (localTimer.realTime)
+                        {
+                            localTimer.elapsedTime = Time.realtimeSinceStartup - localTimer.startRealTimeSinceStartup;
+                        }
+                        else
+                        {
+                            localTimer.elapsedTime = Planetarium.GetUniversalTime() + localTimer.elapsedTimeAtPause - localTimer.startUniversalTime;
+                        }
+                        if (localTimer.countUp)
+                        {
+                            localTimer.hours = (int)(localTimer.elapsedTime / 3600);
+                            localTimer.minutes = (int)((localTimer.elapsedTime - localTimer.hours * 3600) / 60);
+                            localTimer.seconds = (int)(localTimer.elapsedTime - localTimer.hours * 3600 - localTimer.minutes * 60);
+                            localTimer.tenths = (int)((localTimer.elapsedTime - localTimer.hours * 3600 - localTimer.minutes * 60 - localTimer.seconds) * 10);
+                            localTimer.negative = (localTimer.elapsedTime < 0);
+                        }
+                        else
+                        { // timer.countDown
+                            double timeLeft = localTimer.startTime - localTimer.elapsedTime - localTimer.elapsedTimeAtPause;
+                            double absTimeLeft = Math.Abs(timeLeft);
+
+                            localTimer.hours = (int)(absTimeLeft / 3600f);
+                            localTimer.minutes = (int)((absTimeLeft - localTimer.hours * 3600f) / 60f);
+                            localTimer.seconds = (int)(absTimeLeft - localTimer.hours * 3600f - localTimer.minutes * 60f);
+                            localTimer.tenths = (int)((absTimeLeft - localTimer.hours * 3600f - localTimer.minutes * 60f - localTimer.seconds) * 10);
+
+                            if (timeLeft <= 0)
+                            {
+                                if (HighLogic.CurrentGame.Parameters.CustomParams<Big_Ben>().bellAtZero)
+                                {
+                                    if (timeLeft <= 0)
+                                    {
+                                        Debug.Log("localTimer.timerActive: " + localTimer.timerActive);
+                                        Debug.Log("localTimer.timerName: " + localTimer.timerName);
+                                        Debug.Log("localTimer.bellCnt: " + localTimer.bellCnt);
+
+                                        localTimer.hours = localTimer.startHrs;
+                                        localTimer.minutes = localTimer.startMin;
+                                        localTimer.seconds = localTimer.startSec;
+                                        localTimer.startTime = localTimer.repeatingTimeLength;
+                                        localTimer.elapsedTimeAtPause = 0;
+
+                                        localTimer.startUniversalTime = Planetarium.GetUniversalTime();
+
+                                        localTimer.bellCnt = (localTimer.bellCnt % HighLogic.CurrentGame.Parameters.CustomParams<Big_Ben>().maxBellPings) + 1;
+                                        localTimer.nextBellAt = Math.Floor(timeLeft);
+                                        if (soundplayer.SoundPlaying())
+                                            soundplayer.StopSound();
+
+                                        if (HighLogic.CurrentGame.Parameters.CustomParams<Big_Ben>().incrementingBells && !localTimer.pauseAtZero)
+                                            SoundBell("bell", localTimer.bellCnt);
+                                        else
+                                            SoundBell("bell");
+                                        if (localTimer.countDownRepeating)
+                                        {
+
+                                            if (localTimer.pauseAtZero)
+                                            {
+                                                localTimer.bellSounded = true;
+                                                localTimer.timerActive = false;
+
+                                                string dialogMsg = localTimer.timerName + " finished";
+                                                string windowTitle = "Saved Timer";
+                                                EnablePopup(dialogMsg, windowTitle);
+                                            }
+                                            else
+                                            {
+                                                if (localTimer.realTime)
+                                                {
+                                                    localTimer.startRealTimeSinceStartup = Time.realtimeSinceStartup;
+                                                    localTimer.elapsedTime = 0;
+                                                }
+                                            }
+                                        }
+                                        else
+                                            localTimer.timerActive = false;
+
+                                    }
+                                }
+                            }
+                            localTimer.negative = (timeLeft < 0);
+                        }
+
+                    }
+                }
+            }
+            yield return null;
         }
 
         void OnDestroy()
@@ -92,10 +190,18 @@ namespace BigBen
                 soundplayer.Volume = HighLogic.CurrentGame.Parameters.CustomParams<Big_Ben>().volume;
             }
         }
+
+        // Get rid of timers when going to the mainmenu
+
         void onGameSceneSwitchRequested(GameEvents.FromToAction<GameScenes, GameScenes> fta)
         {
             if (fta.to == GameScenes.MAINMENU)
+            {
                 timers = null;
+                visible = false;
+                StopAllCoroutines();
+                Debug.Log("BigBen, going to MainMenu");
+            }
         }
 
         bool wasPlaying = false;
@@ -137,6 +243,7 @@ namespace BigBen
                 );
             }
         }
+
         void GUIButtonToggle()
         {
             visible = !visible;
@@ -144,34 +251,40 @@ namespace BigBen
 
         void SoundBell(string n, int cnt = 1)
         {
+            if (soundplayer == null)
+            {
+                Debug.Log("soundBell, soundplayer is null");
+                return;
+            }
+            soundplayer.Initialize(SOUND_DIR + n); // Initializes the player, does some housekeeping
+
             soundplayer.PlaySound(cnt - 1); //Plays sound
         }
 
         void OnGUI()
         {
-            if (HighLogic.CurrentGame == null)
+            if (HighLogic.CurrentGame == null || !visible)
                 return;
             if (!HighLogic.CurrentGame.Parameters.CustomParams<Big_Ben>().useAlternateSkin)
                 GUI.skin = HighLogic.Skin;
-            if (!initted)
-            {
-                labelTextColor = new GUIStyle("Label");
-                labelTextColor.fontStyle = FontStyle.Bold;
-                //labelTextColor.fontSize++;
-                origTextColor = labelTextColor.normal.textColor;
-                origBackgroundColor = GUI.backgroundColor;
-
-
-                initted = true;
-            }
-            if (visible)
-            {
-                posBigBenWindow = ClickThruBlocker.GUILayoutWindow(56783457, posBigBenWindow, DrawList, "Big Ben",
-                   GUILayout.Width(WIDTH), GUILayout.MinHeight(MIN_HEIGHT), GUILayout.MaxHeight(MAX_HEIGHT));
-            }
-
+            posBigBenWindow = ClickThruBlocker.GUILayoutWindow(winId, posBigBenWindow, DrawList, "Big Ben",
+               GUILayout.Width(WIDTH), GUILayout.MinHeight(MIN_HEIGHT), GUILayout.MaxHeight(MAX_HEIGHT));
+            if (popupEnabled)
+                ShowPopup();
         }
 
+        void ShowPopup()
+        {
+            DialogGUIBase[] options = { new DialogGUIButton("OK", ConfirmOK),
+                                        new DialogGUIButton("Restart Countdown Timer", Continue)};
+
+            MultiOptionDialog confirmationBox = new MultiOptionDialog("", dialogMsg, windowTitle, HighLogic.UISkin, options);
+
+            popup = PopupDialog.SpawnPopupDialog(confirmationBox, false, HighLogic.UISkin);
+            popupEnabled = false;
+        }
+
+        float heightOfOne = 1;
         void DrawList(int id)
         {
             GUILayout.BeginVertical();
@@ -179,12 +292,12 @@ namespace BigBen
             HighLogic.CurrentGame.Parameters.CustomParams<Big_Ben>().multiple = GUILayout.Toggle(HighLogic.CurrentGame.Parameters.CustomParams<Big_Ben>().multiple, "Multiple");
             GUILayout.EndHorizontal();
             if (timers.Count > 4)
-                listPos = GUILayout.BeginScrollView(listPos, GUILayout.Width(WIDTH - 10), GUILayout.ExpandHeight(true));
+                listPos = GUILayout.BeginScrollView(listPos, GUILayout.Width(WIDTH - 10), GUILayout.MinHeight(4 * heightOfOne), GUILayout.ExpandHeight(true));
 
             int cnt = 0;
-            foreach (Timer t in timers)
+            for (int i = 0; i < timers.Count; i++)
             {
-                timer = t;
+                timer = timers[i];
 
                 GUILayout.BeginHorizontal();
                 if (!timer.timerActive)
@@ -199,6 +312,8 @@ namespace BigBen
                 GUILayout.Space(5);
                 if (!HighLogic.CurrentGame.Parameters.CustomParams<Big_Ben>().multiple)
                     break;
+                if (i == 0 && heightOfOne == 1)
+                    heightOfOne = posBigBenWindow.height;
             }
             if (timers.Count > 4)
                 GUILayout.EndScrollView();
@@ -208,11 +323,12 @@ namespace BigBen
 
         void DrawEntryWindow(int cnt)
         {
-            if (HighLogic.CurrentGame.Parameters.CustomParams<Big_Ben>().multiple)
+            if (HighLogic.CurrentGame.Parameters.CustomParams<Big_Ben>().multiple || timer.countDownRepeating)
             {
                 GUILayout.Label("Name: ");
                 timer.timerName = GUILayout.TextField(timer.timerName, GUILayout.MinWidth(90));
                 GUILayout.FlexibleSpace();
+                timer.realTime = GUILayout.Toggle(timer.realTime, "RealTime");
                 GUILayout.EndHorizontal();
                 GUILayout.BeginHorizontal();
             }
@@ -236,20 +352,23 @@ namespace BigBen
             }
             if (!Timer.IsNumeric(timer.hrs))
                 GUI.backgroundColor = Color.red;
-            timer.hrs = GUILayout.TextField(timer.hrs, GUILayout.Width(60));
+            GUILayout.FlexibleSpace();
+            timer.hrs = GUILayout.TextField(timer.hrs, GUILayout.Width(45));
             GUILayout.Label(":");
             if (!Timer.IsNumeric(timer.min))
                 GUI.backgroundColor = Color.red;
-            else 
-                GUI.backgroundColor = origBackgroundColor;
+            else
+                GUI.backgroundColor = RegisterToolbar.origBackgroundColor;
             timer.min = GUILayout.TextField(timer.min, GUILayout.Width(30));
             GUILayout.Label(":");
             if (!Timer.IsNumeric(timer.sec))
                 GUI.backgroundColor = Color.red;
-            else 
-                GUI.backgroundColor = origBackgroundColor;
+            else
+                GUI.backgroundColor = RegisterToolbar.origBackgroundColor;
             timer.sec = GUILayout.TextField(timer.sec, GUILayout.Width(30));
-            GUI.backgroundColor = origBackgroundColor;
+            GUI.backgroundColor = RegisterToolbar.origBackgroundColor;
+            GUILayout.FlexibleSpace();
+
             if (HighLogic.CurrentGame.Parameters.CustomParams<Big_Ben>().multiple)
             {
                 if (cnt == 0)
@@ -266,6 +385,9 @@ namespace BigBen
             if (timer.countDown)
             {
                 timer.countDownRepeating = GUILayout.Toggle(timer.countDownRepeating, "Repeat");
+                GUI.enabled = timer.countDownRepeating;
+                timer.pauseAtZero = GUILayout.Toggle(timer.pauseAtZero, "Pause");
+                GUI.enabled = true;
             }
             if (GUILayout.Button("Reset"))
             {
@@ -278,12 +400,13 @@ namespace BigBen
                     timer.hours = timer.startHrs;
                     timer.minutes = timer.startMin;
                     timer.seconds = timer.startSec;
-                    timer.startTenths = 0;
+                    // timer.startTenths = 0;
                 }
                 timer.elapsedTimeAtPause = 0;
                 timer.bellSounded = false;
                 timer.bellCnt = 0;
                 timer.nextBellAt = 0;
+                timer.timerActive = false;
                 timer.InitEntryFields();
             }
 
@@ -297,32 +420,7 @@ namespace BigBen
                 GUI.enabled = false;
             if (GUILayout.Button("Start", bstyle))
             {
-                timer.startUniversalTime = Planetarium.GetUniversalTime();
-                Debug.Log("[BigBen] startUniversalTime: " + timer.startUniversalTime);
-                if (timer.elapsedTimeAtPause == 0)
-                {
-                    timer.ParseEntryFields();
-
-                    timer.hours = timer.startHrs;
-                    timer.minutes = timer.startMin;
-                    timer.seconds = timer.startSec;
-                    timer.startTenths = 0;
-
-                    timer.startTime =
-                        timer.repeatingTimeLength = timer.hours * 3600 + timer.minutes * 60 + timer.seconds;
-
-                    timer.bellSounded = false;
-                    timer.bellCnt = 0;
-                    timer.nextBellAt = 0;
-
-                    // the following line is needed to deal with a countUp timer starting before T-0
-                    if (timer.countUp && timer.repeatingTimeLength < 0)
-                    {
-                        timer.startUniversalTime -= timer.repeatingTimeLength;
-                        timer.startTime = timer.startUniversalTime;
-                    }
-                }
-                timer.timerActive = true;
+                DoStart();
             }
 
             GUI.backgroundColor = oldColor;
@@ -339,11 +437,47 @@ namespace BigBen
             }
         }
 
+        void DoStart()
+        {
+            timer.startUniversalTime = Planetarium.GetUniversalTime();
+            timer.startRealTimeSinceStartup = Time.realtimeSinceStartup;
+            Debug.Log("[BigBen] startUniversalTime: " + timer.startUniversalTime);
+            if (timer.elapsedTimeAtPause == 0)
+            {
+                timer.ParseEntryFields();
+
+                timer.hours = timer.startHrs;
+                timer.minutes = timer.startMin;
+                timer.seconds = timer.startSec;
+                //timer.startTenths = 0;
+
+                timer.startTime =
+                    timer.repeatingTimeLength = timer.hours * 3600 + timer.minutes * 60 + timer.seconds;
+
+                timer.bellSounded = false;
+                timer.bellCnt = 0;
+                timer.nextBellAt = 0;
+
+                // the following line is needed to deal with a countUp timer starting before T-0
+                if (timer.countUp && timer.repeatingTimeLength < 0)
+                {
+                    timer.startUniversalTime -= timer.repeatingTimeLength;
+                    timer.startTime = timer.startUniversalTime;
+                }
+            }
+            timer.timerActive = true;
+
+        }
         void DrawActiveTimingWindow(int cnt)
         {
-            if (HighLogic.CurrentGame.Parameters.CustomParams<Big_Ben>().multiple)
+            if (HighLogic.CurrentGame.Parameters.CustomParams<Big_Ben>().multiple || timer.countDownRepeating)
             {
                 GUILayout.Label(timer.timerName, GUILayout.MinWidth(60));
+                if (timer.realTime)
+                {
+                    GUILayout.FlexibleSpace();
+                    GUILayout.Label("RealTime");
+                }
                 GUILayout.EndHorizontal();
                 GUILayout.BeginHorizontal();
             }
@@ -353,79 +487,21 @@ namespace BigBen
             else
                 GUILayout.Label("Count Down  ");
             if (HighLogic.CurrentGame.Parameters.CustomParams<Big_Ben>().localTenthsSetting)
-                timer.showTenths= GUILayout.Toggle(timer.showTenths, "Tenths");
+                timer.showTenths = GUILayout.Toggle(timer.showTenths, "Tenths");
 
             timer.elapsedTime = Planetarium.GetUniversalTime() + timer.elapsedTimeAtPause - timer.startUniversalTime;
-            if (timer.countUp)
-            {
-                timer.hours = (int)(timer.elapsedTime / 3600);
-                timer.minutes = (int)((timer.elapsedTime - timer.hours * 3600) / 60);
-                timer.seconds = (int)(timer.elapsedTime - timer.hours * 3600 - timer.minutes * 60);
-                timer.tenths = (int)((timer.elapsedTime - timer.hours * 3600 - timer.minutes * 60 - timer.seconds) * 10);
-                timer.negative = (timer.elapsedTime < 0);
-
-            }
-            else
-            { // timer.countDown
-                double timeLeft = timer.startTime - timer.elapsedTime - timer.elapsedTimeAtPause;
-                double absTimeLeft = Math.Abs(timeLeft);
-
-                timer.hours = (int)(absTimeLeft / 3600f);
-                timer.minutes = (int)((absTimeLeft - timer.hours * 3600f) / 60f);
-                timer.seconds = (int)(absTimeLeft - timer.hours * 3600f - timer.minutes * 60f);
-                timer.tenths = (int)((absTimeLeft - timer.hours * 3600f - timer.minutes * 60f - timer.seconds) * 10);
-                if (timeLeft <= 0)
-                {
-                    if (HighLogic.CurrentGame.Parameters.CustomParams<Big_Ben>().bellAtZero)
-                    {
-                        if (timer.countDownRepeating)
-                        {
-                            if (timeLeft <= 0)
-                            {
-                                timer.hours = timer.startHrs;
-                                timer.minutes = timer.startMin;
-                                timer.seconds = timer.startSec;
-                                timer.startTime = timer.repeatingTimeLength;
-                                timer.elapsedTimeAtPause = 0;
-
-                                timer.startUniversalTime = Planetarium.GetUniversalTime();
-
-                                timer.bellCnt = (timer.bellCnt % HighLogic.CurrentGame.Parameters.CustomParams<Big_Ben>().maxBellPings) + 1;
-                                timer.nextBellAt = Math.Floor(timeLeft);
-                                if (soundplayer.source.audio.isPlaying)
-                                    soundplayer.source.audio.Stop();
-
-                                if (HighLogic.CurrentGame.Parameters.CustomParams<Big_Ben>().incrementingBells)
-                                    SoundBell("bell", timer.bellCnt);
-                                else
-                                    SoundBell("bell");
-                            }
-                        }
-                        else
-                        {
-                            if (!timer.bellSounded)
-                            {
-                                timer.bellSounded = true;
-                                SoundBell("bell");
-                            }
-                        }
-                    }
-                }
-                timer.negative = (timeLeft < 0);
-            }
-
             if (timer.negative)
             {
-                labelTextColor.normal.textColor = Color.red;
-                labelTextColor.active.textColor = Color.red;
+                RegisterToolbar.labelTextColor.normal.textColor = Color.red;
+                RegisterToolbar.labelTextColor.active.textColor = Color.red;
             }
             else
             {
-                labelTextColor.normal.textColor = origTextColor;
-                labelTextColor.active.textColor = origTextColor;
+                RegisterToolbar.labelTextColor.normal.textColor = RegisterToolbar.origTextColor;
+                RegisterToolbar.labelTextColor.active.textColor = RegisterToolbar.origTextColor;
             }
             GUILayout.FlexibleSpace();
-            GUILayout.Label(timer.FormatTime(false, timer.showTenths), labelTextColor);
+            GUILayout.Label(timer.FormatTime(false, timer.showTenths), RegisterToolbar.labelTextColor);
             GUILayout.FlexibleSpace();
 
             if (HighLogic.CurrentGame.Parameters.CustomParams<Big_Ben>().multiple)
@@ -442,8 +518,12 @@ namespace BigBen
             GUILayout.EndHorizontal();
             GUILayout.BeginHorizontal();
             if (timer.countDownRepeating)
-                GUILayout.Label("Repeating every " + timer.FormatTime(true));
-
+            {
+                string str = "Repeating every " + timer.FormatTime(true);
+                if (timer.pauseAtZero)
+                    str += ", pausing at 0";
+                GUILayout.Label(str);
+            }
             var bstyle = new GUIStyle(GUI.skin.button);
             bstyle.normal.textColor = Color.yellow;
 
@@ -452,9 +532,10 @@ namespace BigBen
             {
                 timer.elapsedTimeAtPause += Planetarium.GetUniversalTime() - timer.startUniversalTime;
                 timer.timerActive = false;
+                timer.Reset();
                 timer.InitEntryFields();
             }
-            GUI.backgroundColor = origBackgroundColor;
+            GUI.backgroundColor = RegisterToolbar.origBackgroundColor;
             if (HighLogic.CurrentGame.Parameters.CustomParams<Big_Ben>().multiple)
             {
                 if (cnt == timers.Count - 1)
@@ -467,7 +548,31 @@ namespace BigBen
             }
         }
 
-        void SortList()
+        private PopupDialog popup;
+        string dialogMsg, windowTitle;
+        bool popupEnabled = false;
+
+        void EnablePopup(string dialogMsg, string windowTitle)
+        {
+            this.dialogMsg = dialogMsg;
+            this.windowTitle = windowTitle;
+            popupEnabled = true;
+        }
+
+        public void ConfirmOK()
+        {
+            Debug.Log("ConfirmOK");
+            timer.Reset();
+        }
+
+        public void Continue()
+        {
+            Debug.Log("Continue");
+            timer.Reset();
+            DoStart();
+        }
+
+        internal static void SortList()
         {
             int cnt = 0;
             timers = timers.OrderBy(x => x.sortId).ToList();
@@ -492,13 +597,14 @@ namespace BigBen
             }
             SortList();
         }
-        void AddNewTimer()
+        internal static void AddNewTimer()
         {
-            Timer timer = new Timer();
-            timer.countUp = HighLogic.CurrentGame.Parameters.CustomParams<Big_Ben>().defaultCountUp;
-            timer.countDown = !timer.countUp;
-            timers.Add(timer);
+            Timer lTimer = new Timer();
+            lTimer.countUp = HighLogic.CurrentGame.Parameters.CustomParams<Big_Ben>().defaultCountUp;
+            lTimer.countDown = !lTimer.countUp;
+            timers.Add(lTimer);
         }
+
         void RemoveTimer(Timer timer)
         {
             timers.Remove(timer);
@@ -511,9 +617,11 @@ namespace BigBen
                 posBigBenWindow.height = MIN_HEIGHT;
         }
 
+#if false
         void FixedUpdate()
         {
 
         }
+#endif
     }
 }

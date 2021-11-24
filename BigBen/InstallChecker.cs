@@ -68,14 +68,6 @@ namespace BigBen
 
             }
 
-            //// Check for Module Manager
-            //if (!AssemblyLoader.loadedAssemblies.Any(a => a.assembly.GetName().Name.StartsWith("ModuleManager") && a.url == ""))
-            //{
-            //    PopupDialog.SpawnPopupDialog("Missing Module Manager",
-            //        modName + " requires the Module Manager mod in order to function properly.\n\nPlease download from http://forum.kerbalspaceprogram.com/threads/55219 and copy to the KSP/GameData/ directory.",
-            //        "OK", false, HighLogic.Skin);
-            //}
-
             CleanupOldVersions();
         }
 

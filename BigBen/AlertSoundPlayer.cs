@@ -27,8 +27,12 @@ namespace BigBen
 
         IEnumerator PlayIt(int r)
         {
+            if (source == null)
+                Debug.Log("BigBen.PlayIt, source is null");
             for (int i = 0; i < r; i++)
             {
+                if (source.audio == null)
+                    Debug.Log("BigBen.PlayIt, audio is null");
                 source.audio.Play();
                 while (source.audio.isPlaying)
                     yield return wait;

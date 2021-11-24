@@ -1,5 +1,12 @@
 ChangeLog
 
+0.0.2.5
+	Reduced performance impact
+	Added pause after repeating countdown reaches 0
+	Added realtime timers, both up and down
+	Makde window a bit wider
+	Added saving of timers to save file
+
 0.0.2.4
 	Added AssemblyFileVersion
 	Updated version file for 1.12

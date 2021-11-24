@@ -37,7 +37,7 @@ namespace BigBen
 
         [GameParameters.CustomParameterUI("Incrementing bell when reaching zero",
             toolTip = "Will play up to 12 bells before starting back at one")]
-        public bool incrementingBells = true;
+        public bool incrementingBells = false;
 
         [GameParameters.CustomFloatParameterUI("Bell Volume", minValue = 0, maxValue = 1f, stepCount = 101, displayFormat = "F3",
             toolTip = "Volume of the bell, goes from 0 to 1")]
