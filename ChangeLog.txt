@@ -1,5 +1,11 @@
 ChangeLog
 
+0.0.2.6 
+	moved another GUIStyle into RegisterToolbar
+	Added reinitialization of txtures if changed in the settings
+	Fixed the Up/Down buttons being inverted when using the stock KSP skin
+	Fixed the Up/Down buttons being too big when using the stock KSP skin
+
 0.0.2.5
 	Reduced performance impact
 	Added pause after repeating countdown reaches 0

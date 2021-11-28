@@ -63,11 +63,8 @@ namespace BigBen
 
             return true;
         }
-
-
         public override bool Interactible(MemberInfo member, GameParameters parameters)
         {
-
             return true;
         }
 

@@ -182,12 +182,15 @@ namespace BigBen
             GameEvents.onGameUnpause.Remove(OnUnpause);
             GameEvents.OnGameSettingsApplied.Remove(OnGameSettingsApplied);
         }
+
+        bool initTextures = false;
         void OnGameSettingsApplied()
         {
             if (soundplayer != null &&
                 HighLogic.CurrentGame != null && HighLogic.CurrentGame.Parameters != null)
             {
                 soundplayer.Volume = HighLogic.CurrentGame.Parameters.CustomParams<Big_Ben>().volume;
+                initTextures = true;
             }
         }
 
@@ -267,6 +270,12 @@ namespace BigBen
                 return;
             if (!HighLogic.CurrentGame.Parameters.CustomParams<Big_Ben>().useAlternateSkin)
                 GUI.skin = HighLogic.Skin;
+            if (initTextures)
+            {
+                RegisterToolbar.InitTextures();
+                initTextures = false;
+            }
+
             posBigBenWindow = ClickThruBlocker.GUILayoutWindow(winId, posBigBenWindow, DrawList, "Big Ben",
                GUILayout.Width(WIDTH), GUILayout.MinHeight(MIN_HEIGHT), GUILayout.MaxHeight(MAX_HEIGHT));
             if (popupEnabled)
@@ -332,9 +341,10 @@ namespace BigBen
                 GUILayout.EndHorizontal();
                 GUILayout.BeginHorizontal();
             }
+                bool b = false;
             if (timer.countUp)
             {
-                timer.countUp = GUILayout.Toggle(timer.countUp, "Up", GUI.skin.button);
+                timer.countUp = !GUILayout.Toggle(b, "Up", GUI.skin.button);
                 if (!timer.countUp)
                 {
                     timer.startUniversalTime = 0;
@@ -343,7 +353,7 @@ namespace BigBen
             }
             else
             {
-                timer.countDown = GUILayout.Toggle(timer.countDown, "Down", GUI.skin.button);
+                timer.countDown = !GUILayout.Toggle(b, "Down", GUI.skin.button);
                 if (!timer.countDown)
                 {
                     timer.startUniversalTime = 0;
@@ -386,10 +396,14 @@ namespace BigBen
             {
                 timer.countDownRepeating = GUILayout.Toggle(timer.countDownRepeating, "Repeat");
                 GUI.enabled = timer.countDownRepeating;
+                GUILayout.Label(" ");
+                GUILayout.FlexibleSpace();
                 timer.pauseAtZero = GUILayout.Toggle(timer.pauseAtZero, "Pause");
                 GUI.enabled = true;
             }
-            if (GUILayout.Button("Reset"))
+            GUILayout.Label(" ");
+            GUILayout.FlexibleSpace();
+            if (GUILayout.Button("Reset", GUILayout.Width(75)))
             {
                 if (timer.countUp)
                 {
@@ -412,13 +426,11 @@ namespace BigBen
 
             var oldColor = GUI.backgroundColor;
             GUI.backgroundColor = Color.green;
-            var bstyle = new GUIStyle(GUI.skin.button);
-            bstyle.normal.textColor = Color.yellow;
 
             GUI.backgroundColor = Color.green;
             if (!timer.isValid)
                 GUI.enabled = false;
-            if (GUILayout.Button("Start", bstyle))
+            if (GUILayout.Button("Start", RegisterToolbar.buttonYellow, GUILayout.Width(75)))
             {
                 DoStart();
             }
@@ -524,11 +536,11 @@ namespace BigBen
                     str += ", pausing at 0";
                 GUILayout.Label(str);
             }
-            var bstyle = new GUIStyle(GUI.skin.button);
-            bstyle.normal.textColor = Color.yellow;
+            //var bstyle = new GUIStyle(GUI.skin.button);
+            //bstyle.normal.textColor = Color.yellow;
 
             GUI.backgroundColor = Color.red;
-            if (GUILayout.Button("Stop", bstyle))
+            if (GUILayout.Button("Stop", RegisterToolbar.buttonYellow))
             {
                 timer.elapsedTimeAtPause += Planetarium.GetUniversalTime() - timer.startUniversalTime;
                 timer.timerActive = false;
