@@ -1,5 +1,8 @@
 ChangeLog
 
+0.0.2.8
+	Removed log spam
+
 0.0.2.7 
 	Added new reset button to reset to 0
 	Fixed issue of BigBen stopping working when returning to the main menu

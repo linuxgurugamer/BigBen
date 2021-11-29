@@ -116,9 +116,9 @@ namespace BigBen
                                 {
                                     if (timeLeft <= 0)
                                     {
-                                        Debug.Log("localTimer.timerActive: " + localTimer.timerActive);
-                                        Debug.Log("localTimer.timerName: " + localTimer.timerName);
-                                        Debug.Log("localTimer.bellCnt: " + localTimer.bellCnt);
+                                        Debug.Log("BigBen: localTimer.timerActive: " + localTimer.timerActive);
+                                        Debug.Log("BigBen: localTimer.timerName: " + localTimer.timerName);
+                                        Debug.Log("BigBen: localTimer.bellCnt: " + localTimer.bellCnt);
 
                                         localTimer.hours = localTimer.startHrs;
                                         localTimer.minutes = localTimer.startMin;
@@ -200,7 +200,6 @@ namespace BigBen
                 timers = null;
                 visible = false;
                 StopAllCoroutines();
-                Debug.Log("BigBen, going to MainMenu");
             }
         }
 
@@ -285,7 +284,6 @@ namespace BigBen
 
             posBigBenWindow = ClickThruBlocker.GUILayoutWindow(winId, posBigBenWindow, DrawList, "Big Ben",
                GUILayout.Width(posBigBenWindow.width), GUILayout.MinHeight(MIN_HEIGHT), GUILayout.MaxHeight(MAX_HEIGHT));
-            Debug.Log("BigBen, width: " + posBigBenWindow.width);
             if (popupEnabled)
                 ShowPopup();
         }
@@ -601,13 +599,11 @@ namespace BigBen
 
         public void ConfirmOK()
         {
-            Debug.Log("ConfirmOK");
             timer.Reset();
         }
 
         public void Continue()
         {
-            Debug.Log("Continue");
             timer.Reset();
             DoStart();
         }
