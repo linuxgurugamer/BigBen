@@ -52,7 +52,11 @@ namespace BigBen
             toolTip = "If not enabled, then time will be shown as:  00h 00m 00s")]
         public bool showTimeAsColons = true;
 
-
+#if false
+        [GameParameters.CustomParameterUI("Reset button resets to zero",
+            toolTip = "If false, reset will reset to original setting.  Count-up timers ALWAYS reset to 0")]
+        public bool resetToZero = false;
+#endif
         public override void SetDifficultyPreset(GameParameters.Preset preset)
         {
 

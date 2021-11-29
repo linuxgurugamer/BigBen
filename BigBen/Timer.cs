@@ -204,11 +204,19 @@ namespace BigBen
                 }
             }
         }
-        internal void InitEntryFields()
+        internal void InitEntryFields(bool reset = false)
         {
             hrs = hours.ToString();
             min = minutes.ToString();
             sec = seconds.ToString();
+            if (reset)
+            {
+                elapsedTimeAtPause = 0;
+                bellSounded = false;
+                bellCnt = 0;
+                nextBellAt = 0;
+                timerActive = false;
+            }
         }
         public static bool IsNumeric(string text)
         {
