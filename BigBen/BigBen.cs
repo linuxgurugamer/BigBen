@@ -13,7 +13,7 @@ namespace BigBen
     public class BigBen : MonoBehaviour
     {
         const float WIDTH = 350;
-        const float KSP_WIDTH = 450;
+        const float KSP_WIDTH = 500;
         const float MIN_HEIGHT = 110;
         internal static float MAX_HEIGHT = 800;
         private Rect posBigBenWindow = new Rect(50, 50, WIDTH, MIN_HEIGHT);
@@ -260,6 +260,8 @@ namespace BigBen
             soundplayer.PlaySound(cnt - 1); //Plays sound
         }
 
+        bool useAlternateSkinInitted = false;
+        bool lastUseAlternateSkin = false;
         void OnGUI()
         {
             if (HighLogic.CurrentGame == null || !visible)
@@ -267,19 +269,33 @@ namespace BigBen
             if (!HighLogic.CurrentGame.Parameters.CustomParams<Big_Ben>().useAlternateSkin)
             {
                 GUI.skin = HighLogic.Skin;
-                if (posBigBenWindow.width < KSP_WIDTH)
-                    posBigBenWindow = new Rect(50, 50, KSP_WIDTH, MIN_HEIGHT);
+                if (!useAlternateSkinInitted ||
+                    lastUseAlternateSkin != HighLogic.CurrentGame.Parameters.CustomParams<Big_Ben>().useAlternateSkin)
+                {
+                    initTextures = false;
 
+                    if (posBigBenWindow.width < KSP_WIDTH)
+                        posBigBenWindow = new Rect(50, 50, KSP_WIDTH, MIN_HEIGHT);
+                }
             }
             else
             {
-                if (posBigBenWindow.width != WIDTH)
-                    posBigBenWindow = new Rect(50, 50, WIDTH, MIN_HEIGHT);
+                if (!useAlternateSkinInitted ||
+                     lastUseAlternateSkin != HighLogic.CurrentGame.Parameters.CustomParams<Big_Ben>().useAlternateSkin)
+                {
+                    initTextures = false;
+
+                    if (posBigBenWindow.width != WIDTH)
+                        posBigBenWindow = new Rect(50, 50, WIDTH, MIN_HEIGHT);
+                }
             }
-            if (initTextures)
+            lastUseAlternateSkin = HighLogic.CurrentGame.Parameters.CustomParams<Big_Ben>().useAlternateSkin;
+            useAlternateSkinInitted = true;
+
+            if (!initTextures)
             {
                 RegisterToolbar.InitTextures();
-                initTextures = false;
+                initTextures = true;
             }
 
             posBigBenWindow = ClickThruBlocker.GUILayoutWindow(winId, posBigBenWindow, DrawList, "Big Ben",
@@ -304,8 +320,9 @@ namespace BigBen
         {
             GUILayout.BeginVertical();
             GUILayout.BeginHorizontal();
-            HighLogic.CurrentGame.Parameters.CustomParams<Big_Ben>().multiple = GUILayout.Toggle(HighLogic.CurrentGame.Parameters.CustomParams<Big_Ben>().multiple, "");
+            HighLogic.CurrentGame.Parameters.CustomParams<Big_Ben>().multiple = GUILayout.Toggle(HighLogic.CurrentGame.Parameters.CustomParams<Big_Ben>().multiple, " ");
             GUILayout.Label("Multiple");
+            GUILayout.FlexibleSpace();
             GUILayout.EndHorizontal();
             if (timers.Count > 4)
                 listPos = GUILayout.BeginScrollView(listPos, GUILayout.Width(WIDTH - 10), GUILayout.MinHeight(4 * heightOfOne), GUILayout.ExpandHeight(true));
@@ -344,7 +361,7 @@ namespace BigBen
                 GUILayout.Label("Name: ");
                 timer.timerName = GUILayout.TextField(timer.timerName, GUILayout.MinWidth(90));
                 GUILayout.FlexibleSpace();
-            
+
                 timer.realTime = GUILayout.Toggle(timer.realTime, "");
                 GUILayout.Label("RealTime");
                 GUILayout.EndHorizontal();
@@ -404,9 +421,8 @@ namespace BigBen
             if (timer.countDown)
             {
                 timer.countDownRepeating = GUILayout.Toggle(timer.countDownRepeating, "");
-                GUILayout.Label("Repeat");
+                GUILayout.Label("Repeat ");
                 GUI.enabled = timer.countDownRepeating;
-                GUILayout.Label(" ");
                 GUILayout.FlexibleSpace();
                 timer.pauseAtZero = GUILayout.Toggle(timer.pauseAtZero, "");
                 GUILayout.Label("Pause");
