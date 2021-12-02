@@ -356,17 +356,17 @@ namespace BigBen
 
         void DrawEntryWindow(int cnt)
         {
-            if (HighLogic.CurrentGame.Parameters.CustomParams<Big_Ben>().multiple || timer.countDownRepeating)
+            if (HighLogic.CurrentGame.Parameters.CustomParams<Big_Ben>().multiple) // || timer.countDownRepeating)
             {
                 GUILayout.Label("Name: ");
                 timer.timerName = GUILayout.TextField(timer.timerName, GUILayout.MinWidth(90));
-                GUILayout.FlexibleSpace();
-
-                timer.realTime = GUILayout.Toggle(timer.realTime, "");
-                GUILayout.Label("RealTime");
-                GUILayout.EndHorizontal();
-                GUILayout.BeginHorizontal();
             }
+            GUILayout.FlexibleSpace();
+
+            timer.realTime = GUILayout.Toggle(timer.realTime, "");
+            GUILayout.Label("RealTime");
+            GUILayout.EndHorizontal();
+            GUILayout.BeginHorizontal();
             bool b = false;
             if (timer.countUp)
             {

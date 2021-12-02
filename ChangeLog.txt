@@ -1,5 +1,9 @@
 ChangeLog
 
+0.0.2.10
+	Fixed the "RealTime" toggle not showing up unless multiple or repeating was selected
+	Fixed the "Name" showing up when repeating selected, regardless of whether multiple was selected or not
+
 0.0.2.9
 	Fixed window resizing code causing window to not be draggable
 
