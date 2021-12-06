@@ -1,5 +1,11 @@
 ChangeLog
 
+0.0.2.11
+	Added RealTime label to window for active timers
+	Make the Reset button show the reset value
+	Made the text in the reset buttons yellow
+	Added text to the "Pause" toggle
+
 0.0.2.10
 	Fixed the "RealTime" toggle not showing up unless multiple or repeating was selected
 	Fixed the "Name" showing up when repeating selected, regardless of whether multiple was selected or not

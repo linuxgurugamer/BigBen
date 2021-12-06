@@ -386,6 +386,30 @@ namespace BigBen
                     timer.countUp = true;
                 }
             }
+
+            /////////////////
+            ///
+            GUILayout.FlexibleSpace();
+            var str = timer.FormatTime(true, timer.showTenths);
+            if (GUILayout.Button("Reset to: " + str, RegisterToolbar.buttonYellow, GUILayout.Width(HighLogic.CurrentGame.Parameters.CustomParams<Big_Ben>().useAlternateSkin ? 125 : 175)))
+            {
+                if (timer.countUp)
+                {
+                    timer.Reset();
+                }
+                else
+                {
+                    timer.hours = timer.startHrs;
+                    timer.minutes = timer.startMin;
+                    timer.seconds = timer.startSec;
+                    // timer.startTenths = 0;
+                }
+                timer.InitEntryFields(true);
+            }
+
+            /////////////////
+
+
             if (!Timer.IsNumeric(timer.hrs))
                 GUI.backgroundColor = Color.red;
             GUILayout.FlexibleSpace();
@@ -423,16 +447,15 @@ namespace BigBen
                 timer.countDownRepeating = GUILayout.Toggle(timer.countDownRepeating, "");
                 GUILayout.Label("Repeat ");
                 GUI.enabled = timer.countDownRepeating;
-                GUILayout.FlexibleSpace();
                 timer.pauseAtZero = GUILayout.Toggle(timer.pauseAtZero, "");
-                GUILayout.Label("Pause");
+                GUILayout.Label("Pause before repeat");
                 GUI.enabled = true;
             }
             GUILayout.Label(" ");
             GUILayout.FlexibleSpace();
             if (timer.countDown)
             {
-                if (GUILayout.Button("Reset to 0"))
+                if (GUILayout.Button("Reset to 0", RegisterToolbar.buttonYellow))
                 {
                     timer.startHrs = timer.startMin = timer.startSec = timer.hours = timer.minutes = timer.seconds = 0;
                     // timer.startTenths = 0;
@@ -440,29 +463,7 @@ namespace BigBen
                     timer.InitEntryFields(true);
 
                 }
-            }
-            if (GUILayout.Button("Reset", GUILayout.Width(60)))
-            {
-                if (timer.countUp)
-                {
-                    timer.Reset();
-                }
-                else
-                {
-#if false
-                    if (HighLogic.CurrentGame.Parameters.CustomParams<Big_Ben>().resetToZero)
-                    {
-                        timer.startHrs =
-                        timer.startMin =
-                        timer.startSec = 0;
-                    }
-#endif
-                    timer.hours = timer.startHrs;
-                    timer.minutes = timer.startMin;
-                    timer.seconds = timer.startSec;
-                    // timer.startTenths = 0;
-                }
-                timer.InitEntryFields(true);
+                GUILayout.FlexibleSpace();
             }
 
             var oldColor = GUI.backgroundColor;
@@ -519,7 +520,6 @@ namespace BigBen
                 }
             }
             timer.timerActive = true;
-
         }
 
         void DrawActiveTimingWindow(int cnt)
@@ -540,6 +540,11 @@ namespace BigBen
                 GUILayout.Label("Count Up  ");
             else
                 GUILayout.Label("Count Down  ");
+
+            if (timer.realTime)
+                GUILayout.Label("RealTime   ");
+
+
             if (HighLogic.CurrentGame.Parameters.CustomParams<Big_Ben>().localTenthsSetting)
                 timer.showTenths = GUILayout.Toggle(timer.showTenths, "Tenths");
 
