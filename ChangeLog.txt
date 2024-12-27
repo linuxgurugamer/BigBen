@@ -1,5 +1,9 @@
 ChangeLog
 
+0.0.2.12
+	Updated version file to use github for new version info
+	Copied web page down to README.md file
+
 0.0.2.11
 	Added RealTime label to window for active timers
 	Make the Reset button show the reset value
